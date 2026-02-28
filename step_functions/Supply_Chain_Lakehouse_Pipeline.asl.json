@@ -1,0 +1,78 @@
+{
+  "Comment": "Supply Chain Lakehouse Pipeline",
+  "StartAt": "Ejec. Silver Job",
+  "States": {
+    "Ejec. Silver Job": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "job_silver_supplyChain"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 30,
+          "MaxAttempts": 2,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "Notify Failure"
+        }
+      ],
+      "Next": "Ejec. Gold Job"
+    },
+    "Ejec. Gold Job": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "job_gold_supply_chain"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 30,
+          "MaxAttempts": 2,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "Notify Failure"
+        }
+      ],
+      "Next": "Notify Success"
+    },
+    "Notify Success": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "arn:aws:sns:us-east-2:055129270062:supply-chain-pipeline-notifications",
+        "Message": "Ejecución Exitosa - Pipeline SupplyChain.",
+        "Subject": "SUCCESS - Pipeline SupplyChain"
+      },
+      "End": true
+    },
+    "Notify Failure": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "arn:aws:sns:us-east-2:055129270062:supply-chain-pipeline-notifications",
+        "Message": "Ejecución Fallida - Check CloudWatch logs.",
+        "Subject": "FAILURE - Supply Chain Pipeline"
+      },
+      "End": true
+    }
+  }
+}
